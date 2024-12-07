@@ -28,162 +28,117 @@ require([
     "dojo/json",
     "esri/widgets/Legend"
 
-
     
  ], function(esriConfig, Map, MapView, FeatureLayer, Search, QueryTask, Query, FeatureTable, LayerList, watchUtils, Expand,
   BasemapGallery, domConstruct, dom, on, watchUtils, Editor, CreateWorkflow, UpdateWorkflow, Locate, FeatureForm, FeatureTemplates, domClass,  Popup, PopupTemplate, Home, Legend) {
-    //need new esriconfig.apiKey
-  //esriConfig.apiKey = "AAPKbd17414641f84139af043c11b03c88eamFCGTb4e5J64QrVkSbvKl7lwiAeqhZTS3MXMKoL-UtLeZL2AnlCJ9rCoyIm-mC6y";
+  
   esriConfig.apiKey = "AAPK485bd483be544e7a81f95ec44c935768P1KiKSLDlVqfdCUccKq13y4MXw2VF57BG-nUpacjvrgCpyzLkAap4Fbg8b-QH9hI";
 
   //creating base map
   const map = new Map({
-   basemap: "Topographic" //basemap: "dark-gray-vector"
+   basemap: "dark-gray-vector" //basemap: "dark-gray-vector"(arcgis/topographic), (arcgis/outdoor)
   });
 
-  //creating map view, need to center on glacier national park
+  //creating map view centering on glacier national park
   const view = new MapView({
    container: "viewDiv",
    map: map,
-   center: [113.8061405°W, 48.6836922°N], // longitude and latitude for Glacier National Park, 113.8061405°W 48.6836922°N longitude, latitude for Naperville 41.74779842602606, -88.15690516211465
-   zoom: 17
+   center: [-113.8061405,48.6836922 ], // longitude and latitude for Glacier National Park, 113.8061405°W 48.6836922°N longitude, latitude for Naperville 41.74779842602606, -88.15690516211465
+   zoom: 9  //17
   }
   );
 
-
-
+  //creating the home button to center the map 
   var homeBtn = new Home({
     view: view
   });
-  //create incident icon
-//add new icons
 
-//create incident icon
-// const addresspointsRenderer = {
-//   "type": "simple",
-//   "symbol": {
-//     "type": "picture-marker",
-//     "url": "img/rectangle_addresses.png",
-//     "width": "24px",
-//     "height": "24px"
-//   }
-// }       
-// Define a pop-up for Address Points, don't need
-//  const popupAddresspoints = {
-//   "title": "<b>Full Address<b>",
-//   "content": "{FULL_ADDRE}<br><b></b> {CITY}, {STATE} {ZIP}"
-// }
-//address label feature layer (points), don't need
-  // const addresspointsLayer = new FeatureLayer({
-  //   url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/ArcGIS/rest/services/GEOG777PROJ2_Layers/FeatureServer/9",
-  //   renderer: addresspointsRenderer,
-  //   outFields: ["FULL_ADDRE","CITY","STATE","ZIP"],
-  //   popupTemplate: popupAddresspoints
-  // });
+  //create Animal Sightings Icon and adjust for scale
+  const pictureMarkerSymbol7 = {
+    type: "picture-marker", // Type of the symbol
+    url:"https://static.arcgis.com/images/Symbols/NPS/Deer_viewing_1.png",//white deer icon //"https://static.arcgis.com/images/Symbols/NPS/Deer_viewing.png", //black deer icon// URL to the image
+    angle: 0,
+    xoffset: 0,
+    yoffset: 0
+  };
   
-    //create Bear Report Icon
- // const bearreportRenderer = {
- //     "type": "simple",
- //     "symbol": {
- //     "type": "picture-marker",
- //     "url": "img/bear_2.jpg", //need a new url
- //     "width": "24px",
- //     "height": "24px"   
-  //adding icon types for incident features(convert for bear sightings, how do I add a second field to report)
-var bearreportRenderer = {
-  type: "unique-value",  // autocasts as new UniqueValueRenderer()
-  legendOptions: {
-    title: "Report Type"
-  },
-  field: "ReportType",  // values returned by this function will
-                     // be used to render features by type
-  uniqueValueInfos: [
-    {
-      value: "Sighting",  // features labeled as "Sighting"
-      label: "Sighting",
-      symbol: {
-        "type": "picture-marker",
-        "url": "img/bear_2.jpg",
-        "width": "12px",
-        "height": "12px"
+  // Define a simple renderer using the JSON-based symbol for Animal Sightings
+  const animalsightingRenderer = {
+    type: "simple", // Use a simple renderer
+    symbol: pictureMarkerSymbol7, // Assign the JSON PictureMarkerSymbol
+    visualVariables: [
+      {
+        type: "size",
+        field: null, // Use scale instead of a field
+        stops: [
+          { value: 10000, size: 10 }, // Small marker at a large scale
+          { value: 5000, size: 16 },
+          { value: 2500, size: 20 },
+          { value: 1000, size: 24 } // Larger marker at a small scale
+        ]
       }
-    }, {
-      value: "Track",  // features labeled as "Track"
-      label: "Track or Paw Prints",
-      symbol: {
-        "type": "picture-marker",
-        "url": "img/bear_2.jpg",
-        "width": "12px",
-        "height": "12px"
-      }
-    }, {
-      value: "Scat",  // features labeled as "Scat"
-      label: "Scat or Poop",
-      symbol: {
-        "type": "picture-marker",
-        "url": "img/bear_2.jpg",
-        "width": "12px",
-        "height": "12px"
-      }
-    }, {
-      value: "Encounter",  // features labeled as "Encounter"
-      label: "Encounter",
-      symbol: {
-        "type": "picture-marker",
-        "url": "img/bear_2.jpg",
-        "width": "12px",
-        "height": "12px"
-      }  
-
-
-          
     ]
-};    
+  };
 
-         
-//Define a pop-up for Bear Reports
- const popupBearReport = {
-     "title": "<b>Bear Reports<b>",
-     "content": "{Report Type}<br><b></b> {Kind}, {Date} {Time}"
-}    
+// Define a pop-up for Animal Sightings with attachment support
+const popupAnimalSighting = {
+  "title": "<b>Animal Sighting</b>",
+  "content": [
+    {
+      type: "fields",
+      fieldInfos: [
+        { fieldName: "Species", label: "Species" },
+        { fieldName: "Date_Time", label: "Date" },
+        { fieldName: "Location_Desc", label: "Location" },
+        { fieldName: "UserName", label: "User Name" }
+      ]
+    },
+    {
+      type: "attachments" // This will display any attachments in the popup
+    }
+  ]
+};
 
-//Bear Report feature layer (points), don't need
-  const bearReportLayer = new FeatureLayer({
-    url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/Bear_Encounters/FeatureServer",
-    renderer: bearreportRenderer,
-    outFields: ["ReportType","Kind","Date","Time"],
-    popupTemplate: popupBearReport
-  });
+//Animal Sighting feature layer (points)----------------------
+const animalSightingLayer = new FeatureLayer({
+  url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/Animal_Sightings2/FeatureServer", //https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/Animal_Sightings_1/FeatureServer", 
+  title: "Animal Sightings",
+  renderer: animalsightingRenderer,
+  outFields: ["Species","Date_Time","Location_Desc", "UserName"], //"Species of Animal"
+  popupTemplate: popupAnimalSighting
+});
 
-  map.add(bearReportLayer);
+// Add the layer to the map
+  map.add(animalSightingLayer);
 
-
-//     // Define a pop-up for Incidents
-  //     const popupIncidents = {
-  //       "title": "<b>Incident<b>",
-  //       "content": "<b>Severity:</b> {Severity}<br><b>Type:</b> {IncidentType}"
-  //     }
-
-  //   const incidentLayer = new FeatureLayer({
-  //       url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/ArcGIS/rest/services/GEOG777PROJ2_Layers/FeatureServer/0",
-  //       renderer: incidentRenderer,
-  //       outFields: ["OBJECTID","IncidentType","Severity"],
-  //       popupTemplate: popupIncidents
-  //     });
-
-  // incidentLayer.visible = true;
-  // map.add(incidentLayer);
-
- //create TrailHeads Icon
+   //create Trail Heads Icon and adjust for scale
+   const pictureMarkerSymbol6 = {
+    type: "picture-marker", // Type of the symbol
+    url: "https://static.arcgis.com/images/Symbols/NPS/Hiking.png",// URL to the image
+    angle: 0,
+    xoffset: 0,
+    yoffset: 0
+  };
+  
+  // Define a simple renderer using the JSON-based symbol for Trail Heads
   const trailHeadsRenderer = {
-     "type": "simple",
-     "symbol": {
-     "type": "picture-marker",
-     "url": "img/trailhead_2.png", 
-     "width": "24px",
-     "height": "24px"   
-    
-//Define a pop-up for Trail Heads
+    type: "simple", // Use a simple renderer
+    symbol: pictureMarkerSymbol6, // Assign the JSON PictureMarkerSymbol
+    visualVariables: [
+      {
+        type: "size",
+        field: null, // Use scale instead of a field
+        stops: [
+          { value: 10000, size: 10 }, // Small marker at a large scale
+          { value: 5000, size: 16 },
+          { value: 2500, size: 20 },
+          { value: 1000, size: 24 } // Larger marker at a small scale
+        ]
+      }
+    ]
+  };
+ 
+    //Define a pop-up for Trail Heads
   const popupTrailHeads = {
      "title": "<b>Trail Heads<b>",
      "content": "{POINAME}<br><b></b> {POITYPE}, {UNITNAME}"
@@ -192,48 +147,88 @@ var bearreportRenderer = {
 //Trail Heads feature layer (points), 
   const trailHeadsLayer = new FeatureLayer({
     url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/GNP_POI_TrailHeads/FeatureServer",
+    title: "Trail Heads",
     renderer: trailHeadsRenderer,
     outFields: ["POINAME","POITYPE","UNITNAME"],
     popupTemplate: popupTrailHeads
   });
-  
+  // Add the layer to the map
     map.add(trailHeadsLayer);
 
- //create Restrooms Icon
- const RestroomsRenderer = {
-     "type": "simple",
-     "symbol": {
-     "type": "picture-marker",
-     "url": "img/restrooms.jpg",
-     "width": "24px",
-     "height": "24px"   
-    
+
+      //create Restrooms Icon and adjust for scale
+      const pictureMarkerSymbol5 = {
+        type: "picture-marker", // Type of the symbol
+        url: "https://static.arcgis.com/images/Symbols/NPS/Restrooms.png",// URL to the image
+        angle: 0,
+        xoffset: 0,
+        yoffset: 0
+      };
+      
+      // Define a simple renderer using the JSON-based symbol
+      const RestroomsRenderer = {
+        type: "simple", // Use a simple renderer
+        symbol: pictureMarkerSymbol5, // Assign the JSON PictureMarkerSymbol
+        visualVariables: [
+          {
+            type: "size",
+            field: null, // Use scale instead of a field
+            stops: [
+              { value: 10000, size: 10 }, // Small marker at a large scale
+              { value: 5000, size: 16 },
+              { value: 2500, size: 20 },
+              { value: 1000, size: 24 } // Larger marker at a small scale
+            ]
+          }
+        ]
+      };
+
 //Define a pop-up for Restrooms
  const popupRestrooms = {
      "title": "<b>RestRooms<b>",
      "content": "{POINAME}<br><b></b> {NOTES}"
 }    
-         
+     
 //Trail Heads feature layer (points), 
  const RestRoomsLayer = new FeatureLayer({
     url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/GNP_POI_Restrooms/FeatureServer",
+    title: "RestRooms",
     renderer: RestroomsRenderer,
     outFields: ["POINAME","NOTES"],
     popupTemplate: popupRestrooms
   });
- 
+ // Add the layer to the map
   map.add(RestRoomsLayer);
+  
+  
+  // Create the JSON-based PictureMarkerSymbol for Viewing Area
+const pictureMarkerSymbol4 = {
+  type: "picture-marker", // Type of the symbol
+  url: "https://static.arcgis.com/images/Symbols/NPS/Scenic_viewpoint_.png",//"https://static.arcgis.com/images/Symbols/NPS/Viewing_area.png",// URL to the image
+  angle: 0,
+  xoffset: 0,
+  yoffset: 0
+};
 
- //create ViewPoints Icon
- const viewPointsRenderer = {
-     "type": "simple",
-     "symbol": {
-     "type": "picture-marker",
-     "url": "img/viewpoint.jpg", //need a new url
-     "width": "24px",
-     "height": "24px"   
-    
-//Define a pop-up for View Points
+// Define a simple renderer using the JSON-based symbo for View Points
+const viewPointsRenderer = {
+  type: "simple", // Use a simple renderer
+  symbol: pictureMarkerSymbol4, // Assign the JSON PictureMarkerSymbol
+  visualVariables: [
+    {
+      type: "size",
+      field: null, // Use scale instead of a field
+      stops: [
+        { value: 10000, size: 10 }, // Small marker at a large scale
+        { value: 5000, size: 16 },
+        { value: 2500, size: 20 },
+        { value: 1000, size: 24 } // Larger marker at a small scale
+      ]
+    }
+  ]
+};
+
+  //Define a pop-up for View Points
  const popupViewPoints = {
      "title": "<b>View Points<b>",
      "content": "{POINAME}<br><b></b> {NOTES}"
@@ -242,24 +237,43 @@ var bearreportRenderer = {
 //View Points feature layer (points), 
   const viewPointsLayer = new FeatureLayer({
     url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/GNP_POI_ViewPoints/FeatureServer",
+    title: "View Points",
     renderer: viewPointsRenderer,
     outFields: ["POINAME","NOTES"],
     popupTemplate: popupViewPoints
   });
 
+// Add the layer to the map
   map.add(viewPointsLayer);
+  
+// Create the JSON-based PictureMarkerSymbol for Ranger Stations
+const pictureMarkerSymbol3 = {
+  type: "picture-marker", // Type of the symbol
+  url: "https://static.arcgis.com/images/Symbols/NPS/Ranger_station.png",//"https://static.arcgis.com/images/Symbols/NPS/Picnic_area.png", // URL to the image
+  angle: 0,
+  xoffset: 0,
+  yoffset: 0
+};
 
+// Define a simple renderer using the JSON-based symbol for Ranger Stations
+const RangerStationRenderer = {
+  type: "simple", // Use a simple renderer
+  symbol: pictureMarkerSymbol3, // Assign the JSON PictureMarkerSymbol
+  visualVariables: [
+    {
+      type: "size",
+      field: null, // Use scale instead of a field
+      stops: [
+        { value: 10000, size: 10 }, // Small marker at a large scale
+        { value: 5000, size: 16 },
+        { value: 2500, size: 20 },
+        { value: 1000, size: 24 } // Larger marker at a small scale
+      ]
+    }
+  ]
+};
 
-    //create Ranger Station Icon
-  const RangerStationRenderer = {
-     "type": "simple",
-     "symbol": {
-     "type": "picture-marker",
-     "url": "img/rangerStation.gif",   
-     "width": "24px",
-     "height": "24px"   
-    
-//Define a pop-up for Ranger Station
+  //Define a pop-up for Ranger Station
     const popupRangerStation = {
      "title": "<b>Ranger Stations<b>",
      "content": "{POINAME}<br><b></b> {POITYPE}"
@@ -268,23 +282,41 @@ var bearreportRenderer = {
 //Ranger Stations feature layer (points), 
     const RangerStationLayer = new FeatureLayer({
     url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/GNP_POI_RangerStation/FeatureServer",
+    title: "Ranger Stations",
     renderer: RangerStationRenderer,
     outFields: ["POINAME","POITYPE"],
     popupTemplate: popupRangerStation
   });
-
+// Add the layer to the map
   map.add(RangerStationLayer);
 
- //create Picnic Areas Icon
-    const picnicAreasRenderer = {
-     "type": "simple",
-     "symbol": {
-     "type": "picture-marker",
-     "url": "img/picnicarea.jpg", //need a new url
-     "width": "24px",
-     "height": "24px"   
-    
-//Define a pop-up for Picnic Areas
+  // Create the JSON-based PictureMarkerSymbol for Picnic Areas
+const pictureMarkerSymbol1 = {
+  type: "picture-marker", // Type of the symbol
+  url: "https://static.arcgis.com/images/Symbols/NPS/Picnic_area.png", // URL to the image
+  angle: 0,
+  xoffset: 0,
+  yoffset: 0
+};
+
+// Define a simple renderer using the JSON-based symbol for Picnic Areas
+const picnicAreasRenderer = {
+  type: "simple", // Use a simple renderer
+  symbol: pictureMarkerSymbol1, // Assign the JSON PictureMarkerSymbol
+  visualVariables: [
+    {
+      type: "size",
+      field: null, // Use scale instead of a field
+      stops: [
+        { value: 10000, size: 10 }, // Small marker at a large scale
+        { value: 5000, size: 16 },
+        { value: 2500, size: 20 },
+        { value: 1000, size: 24 } // Larger marker at a small scale
+      ]
+    }
+  ]
+};
+      //Define a pop-up for Picnic Areas
     const popuppicnicAreas = {
      "title": "<b>Picnic Areas<b>",
      "content": "{POINAME}<br><b></b> {POITYPE}"
@@ -293,23 +325,43 @@ var bearreportRenderer = {
 //Picnic Areas feature layer (points), 
     const PicnicAreasLayer = new FeatureLayer({
     url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/GNP_POI_PicnicArea/FeatureServer",
+    title: "Picnic Areas",
     renderer: picnicAreasRenderer,
     outFields: ["POINAME","POITYPE"],
     popupTemplate: popuppicnicAreas
   });
-
+// Add the layer to the map
   map.add(PicnicAreasLayer);
-
-  //create Parking Icon
-    const parkingRenderer = {
-     "type": "simple",
-     "symbol": {
-     "type": "picture-marker",
-     "url": "img/parkinglot.jpg", //need a new url
-     "width": "24px",
-     "height": "24px"   
     
-//Define a pop-up for Parking
+   
+   // Create the JSON-based PictureMarkerSymbol for Parking Lots
+const pictureMarkerSymbol2 = {
+  type: "picture-marker", // Type of the symbol
+  url: "https://static.arcgis.com/images/Symbols/NPS/Parking.png", // URL to the image
+  angle: 0,
+  xoffset: 0,
+  yoffset: 0
+};
+
+// Define a simple renderer using the JSON-based symbol
+const parkingRenderer = {
+  type: "simple", // Use a simple renderer
+  symbol: pictureMarkerSymbol2, // Assign the JSON PictureMarkerSymbol
+  visualVariables: [
+    {
+      type: "size",
+      field: null, // Use scale instead of a field
+      stops: [
+        { value: 10000, size: 10 }, // Small marker at a large scale
+        { value: 5000, size: 16 },
+        { value: 2500, size: 20 },
+        { value: 1000, size: 24 } // Larger marker at a small scale
+      ]
+    }
+  ]
+};
+  
+    //Define a pop-up for Parking
     const popupParking = {
      "title": "<b>Parking Lots<b>",
      "content": "{POINAME}<br><b></b> {POITYPE}, {NOTES}"
@@ -318,23 +370,42 @@ var bearreportRenderer = {
 //Parking Lots feature layer (points), 
     const ParkingLayer = new FeatureLayer({
     url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/GNP_POI_Parking/FeatureServer",
+    title: "Parking Lots",
     renderer: parkingRenderer,
     outFields: ["POINAME","POITYPE", "NOTES"],
     popupTemplate: popupParking
   });
-
+// Add the layer to the map
   map.add(ParkingLayer);
-
-  //create Campgrounds Icon
-    const CampgroundsRenderer = {
-     "type": "simple",
-     "symbol": {
-     "type": "picture-marker",
-     "url": "img/campsite.jpg", //need a new url
-     "width": "24px",
-     "height": "24px"   
     
-//Define a pop-up for Campgrounds
+// Create the JSON-based PictureMarkerSymbol for Campgrounds
+const pictureMarkerSymbol = {
+  type: "picture-marker", // Type of the symbol
+  url: "https://static.arcgis.com/images/Symbols/NPS/Campsite.png", // URL to the image
+  angle: 0,
+  xoffset: 0,
+  yoffset: 0
+};
+
+// Define a simple renderer using the JSON-based symbol
+const CampgroundsRenderer = {
+  type: "simple", // Use a simple renderer
+  symbol: pictureMarkerSymbol, // Assign the JSON PictureMarkerSymbol
+  visualVariables: [
+    {
+      type: "size",
+      field: null, // Use scale instead of a field
+      stops: [
+        { value: 10000, size: 10 }, // Small marker at a large scale
+        { value: 5000, size: 16 },
+        { value: 2500, size: 20 },
+        { value: 1000, size: 24 } // Larger marker at a small scale
+      ]
+    }
+  ]
+};
+
+    //Define a pop-up for Campgrounds
     const popupCampgrounds = {
      "title": "<b>Campgrounds<b>",
      "content": "{POINAME}<br><b></b> {POITYPE}, {NOTES}"
@@ -343,15 +414,17 @@ var bearreportRenderer = {
 //Campgrounds feature layer (points), 
     const CampgroundsLayer = new FeatureLayer({
     url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/GNP_POI_Campgrounds/FeatureServer",
+    title: "Campgrounds",
     renderer: CampgroundsRenderer,
-    outFields: ["POINAME","POITYPE", "NOTES'],
+    outFields: ["POINAME","POITYPE", "NOTES"],
     popupTemplate: popupCampgrounds
   });
 
+  // Add the layer to the map
   map.add(CampgroundsLayer);
     
-  // Define a pop-up for Trails
-   const popupTrails = {
+  // Define a pop-up for Trails -----------see about adding links to all trails for more information. 
+   const popupTrails = { 
     "title": "<b>Trails</b>",
     "content": "{NAME} <br><b><b>,{AREA},{Miles}, {DESC_SEG}, {TRAILROUTE}"
    }
@@ -359,25 +432,22 @@ var bearreportRenderer = {
    const TrailsRenderer = {
     type: "simple",
     symbol: {
-      type: "simple-fill",
-      size: 6,
-      color: "#71de6e",
-      outline: {
-        color: [128, 128, 128, 0.5],
-        width: "0.5px"
-      }
+      color: "#FF0000",
+      type: "simple-line",
+      style: "solid",  
     }
   };
 
   //Adding Trails feature layer (polygons)
   const TrailsLayer = new FeatureLayer({
     url: "https://services2.arcgis.com/DRQySz3VhPgOv7Bo/arcgis/rest/services/Glacier_National_Park_Trails/FeatureServer",
+    title: "Trails",
     renderer: TrailsRenderer,
-    opacity: 0.2,
+    opacity: 1.0,
     outFields: ["NAME","AREA","Miles", "DESC_SEG", "TRAILROUTE"],
     popupTemplate: popupTrails
   });
-
+// Add the layer to the map
   map.add(TrailsLayer, 0);   
     
 // Define a pop-up for GNP Boundary
@@ -389,236 +459,52 @@ var bearreportRenderer = {
    const GNPboundaryRenderer = {
     type: "simple",
     symbol: {
-      type: "simple-fill",
-      size: 6,
-      color: "#71de6e",
-      outline: {
-        color: [128, 128, 128, 0.5],
-        width: "0.5px"
-      }
+      color: "#000000", 
+      type: "simple-line",
+      style: "solid" 
     }
   };
 
   //Adding GNP Boundary feature layer (polygons)
   const GNPboundaryLayer = new FeatureLayer({
     url: "https://services5.arcgis.com/qq4v7PSRahj3ckMw/arcgis/rest/services/GNP_Boundary/FeatureServer",
+    title: "Glacier National Park Boundary",
     renderer: GNPboundaryRenderer,
-    opacity: 0.2,
+    opacity: 1.0,
    //outFields: //["NAME","AREA","Miles", "DESC_SEG", "TRAILROUTE"],
     popupTemplate: popupGNPboundary
     
    });
-
+// Add the layer to the map
   map.add(GNPboundaryLayer, 0); 
 
  // Define a pop-up for Roads
    const popupRoads = {
     "title": "<b>Roads</b>",
-    "content": "{ROADNAME} <br><b><b>,{ROADNUM},{ADMIN *}, {SURFACE}"
+    "content": "{ROADNAME} <br><b><b>,{ROADNUM},{ADMIN}, {SURFACE}"
     } 
-  }
 
    const RoadsRenderer = {
     type: "simple",
     symbol: {
-      type: "simple-fill",
-      size: 6,
-      color: "#71de6e",
-      outline: {
-        color: [128, 128, 128, 0.5],
-        width: "0.5px"
+      color:"#FFAA00",
+      type: "simple-line",
+      style: "solid",
       }
-    }
   };
 
   //Adding Roads feature layer (polygons)
   const RoadsLayer = new FeatureLayer({
     url: "https://geo.dot.gov/server/rest/services/Hosted/North_American_Roads_DS/FeatureServer",
+    title: "Roads",
     renderer: RoadsRenderer,
-    opacity: 0.2,
-    outFields: ["ROADNAME","ROADNUM","ADMIN *", "SURFACE"],
+    opacity: 1.0,
+    outFields: ["ROADNAME","ROADNUM","ADMIN", "SURFACE"],
     popupTemplate: popupRoads
   });
-
+// Add the layer to the map
   map.add(RoadsLayer, 0);   
 
-//adding icon types for stormwater features (I don't know if I need this)
-
-//  const defaultSym = {
-//   type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
-//   color: [0, 0, 0, 0],
-  
-//   outline: {
-//     // autocasts as new SimpleLineSymbol()
-//     color: "#71de6e",
-//     width: 1
-//   }
-// };
-
-  /* only use for single symbol
-  //create incident icon
-  const incidentRenderer = {
-    "type": "simple",
-    "symbol": {
-      "type": "picture-marker",
-      "url": "img/redleaf.png",
-      "width": "12px",
-      "height": "12px"
-    }
-  }
-*/ 
-  
-//adding icon types for incident features(convert for bear sightings, Andy I don't think you need this)
-// var incidentRenderer = {
-//   type: "unique-value",  // autocasts as new UniqueValueRenderer()
-//   legendOptions: {
-//     title: "Severity"
-//   },
-//   field: "Severity",  // values returned by this function will
-//                      // be used to render features by type
-//   uniqueValueInfos: [
-//     {
-//       value: "Low",  // features labeled as "Low"
-//       label: "Low: Reponse in 1 week",
-//       symbol: {
-//         "type": "picture-marker",
-//         "url": "img/greenleaf.png",
-//         "width": "12px",
-//         "height": "12px"
-//       }
-//     }, {
-//       value: "Moderate",  // features labeled as "Moderate"
-//       label: "Moderate: Response in 1-2 days",
-//       symbol: {
-//         "type": "picture-marker",
-//         "url": "img/yellowleaf.png",
-//         "width": "12px",
-//         "height": "12px"
-//       }
-//     }, {
-//       value: "High",  // features labeled as "High"
-//       label: "High: Response in <1 day",
-//       symbol: {
-//         "type": "picture-marker",
-//         "url": "img/redleaf.png",
-//         "width": "12px",
-//         "height": "12px"
-//       }
-//     }
-//   ]
-// };
-
-
-
-  //     // Define a pop-up for Incidents
-  //     const popupIncidents = {
-  //       "title": "<b>Incident<b>",
-  //       "content": "<b>Severity:</b> {Severity}<br><b>Type:</b> {IncidentType}"
-  //     }
-
-  //   const incidentLayer = new FeatureLayer({
-  //       url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/ArcGIS/rest/services/GEOG777PROJ2_Layers/FeatureServer/0",
-  //       renderer: incidentRenderer,
-  //       outFields: ["OBJECTID","IncidentType","Severity"],
-  //       popupTemplate: popupIncidents
-  //     });
-
-  // incidentLayer.visible = true;
-  // map.add(incidentLayer);
-
-  //adding icon types for stormwater features
-  // var stormstructuresRenderer = {
-  //   type: "unique-value",  // autocasts as new UniqueValueRenderer()
-  //   legendOptions: {
-  //     title: "Types"
-  //   },
-  //   field: "SUBTYPE",  // values returned by this function will
-  //                      // be used to render features by type
-  //   uniqueValueInfos: [
-  //     {
-  //       value: "1",  // features labeled as "High"
-  //       label: "Catch Basin",
-  //       symbol: {
-  //         "type": "picture-marker",
-  //         "url": "img/catchbasin_icon.png",
-  //         "width": "12px",
-  //         "height": "12px"
-  //       }
-  //     }, {
-  //       value: "9",  // features labeled as "Medium"
-  //       label: "FES Inlet",
-  //       symbol: {
-  //         "type": "picture-marker",
-  //         "url": "img/FESinlet_icon.png",
-  //         "width": "12px",
-  //         "height": "12px"
-  //       }
-  //     }, {
-  //       value: "2",  // features labeled as "Low"
-  //       label: "Manhole (Open Lid)",
-  //       symbol: {
-  //         "type": "picture-marker",
-  //         "url": "img/manholeopenlid_icon.png",
-  //         "width": "12px",
-  //         "height": "12px"
-  //       }
-  //     }, {
-  //       value: "4",  // features labeled as "High"
-  //       label: "Non-Standard Inlet",
-  //       symbol: {
-  //         "type": "picture-marker",
-  //         "url": "img/nonstandardinlet_icon.png",
-  //         "width": "12px",
-  //         "height": "12px"
-  //       }
-  //     }, {
-  //       value: "8",  // features labeled as "Medium"
-  //       label: "Standard Inlet",
-  //       symbol: {
-  //         "type": "picture-marker",
-  //         "url": "img/standardinlet_icon.png",
-  //         "width": "12px",
-  //         "height": "12px"
-  //       }
-  //     }
-  //   ]
-  // };
-
-//   // Define a pop-up for Incidents
-//   const popupStormstructures = {
-//     "title": "<b>Storm Drain Information<b>",
-//     "content": "<b>Type:</b> {SUBTYPE}<br><b>ID:</b> {STRUCTUREI}<br><b>Depth:</b> {DEPTH} ft<br><b>Location:</b> {LOCATION}"
-//   }
-
-// const stormstructuresLayer = new FeatureLayer({
-//     url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/ArcGIS/rest/services/GEOG777PROJ2_Layers/FeatureServer/3",
-//     renderer: stormstructuresRenderer,
-//     outFields: ["OBJECTID","IncidentType","Severity"],
-//     popupTemplate: popupStormstructures,
-//     autoOpenEnabled: true,
-//     collapseEnabled: false
-//   });
-
-//   map.add(stormstructuresLayer);
-
-//   // Define a pop-up for subdivisions(don't know if I need it, probably not)Andy I don't think you need this.
-//   const popupSubdivisions = {
-//     title: "<b>{SUB_NAME}<br><b>Trees: {TREE_TOTAL} <b>Storm Drains:</b> {STORM_TOTAL}",
-//     content: [{
-//       type: "media",
-//        mediaInfos: [{
-//         type: "pie-chart", //delete this line to remove pie chart
-//          size: 6, //delete this line to remove pie chart
-         
-
-//          caption: "Ratio of Tree to Storm Drains: {TREE_TOTAL}:{STORM_TOTAL}", //delete this line to remove pie chart
-//          value: {
-//            fields: [ "TREE_TOTAL","STORM_TOTAL" ],
-//            normalizeField: null,
-//            }
-//          }]
-//      }]
-//    }
 
    view.popup.dockEnabled = true
    view.popup.collapseEnabled = false
@@ -628,22 +514,7 @@ var bearreportRenderer = {
     position: 'bottom-right'
   }
 
-//   const subdivisionsRenderer = {
-//     type: "simple",
-//     symbol: {
-//       type: "simple-fill",
-//       size: 6,
-//       color: "#71de6e",
-//       outline: {
-//         color: [128, 128, 128, 0.5],
-//         width: "0.5px"
-//       }
-//     }
-//   };
-
-//   map.add(subdivisionsLayer, 0);
-
-  //Location Widget (Andy keep)
+  //Location Widget
   const locate = new Locate({
     view: view,
     useHeadingEnabled: false,
@@ -653,80 +524,45 @@ var bearreportRenderer = {
     }
   });
 
-/*
-  // New FeatureForm and set its layer to Crayfish Burrows FeatureLayer.
-  const featureForm = new FeatureForm({
-    container: "formDiv",
-    layer: incidentLayer,
-    fieldConfig: [
-      {
-        name: "IncidentType",
-        label: "Incident Type"
-      },
-      {
-        name: "Severity",
-        label: "Severity1"
-      }
-    ],
-  });
-
-  // Listen to the feature form's submit event.
-  // Update feature attributes shown in the form.
-  //for add features "Add" adds the feature, for update feature "Update" updates the feature
-  featureForm.on("submit", function() {
-    if (editFeature) {
-      // Grab updated attributes from the form.
-      const updated = featureForm.getValues();
-
-      // Loop through updated attributes and assign
-      // the updated values to feature attributes.
-      Object.keys(updated).forEach(function(name) {
-        editFeature.attributes[name] = updated[name];
-      });
-
-      // Setup the applyEdits parameter with updates.
-      const edits = {
-        updateFeatures: [editFeature]
-      };
-      applyEditsToIncidents(edits);
-      document.getElementById("viewDiv").style.cursor = "auto";
-    }
-  });
-*/
-  
-//create editor panel (this is where you add the various layers that you will display) EDIT THIS ANDY
+  //create editor panel (this is where you add the various layers that you will display)(adds picture attachment)------
   const editor = new Editor({
     view: view,
-    label: "Bear Report", //"incident"
-    allowedWorkflows: ["create", "update"],
+    // label: "Animal Sighting", 
+    // allowedWorkflows: ["create", "update"], 
     layerInfos: [{
-      view: view,
-      layer: bearReportLayer,
+      //view: view,
+      layer: animalSightingLayer,
+      formTemplate: { //autocastable to FieldElement
       fieldConfig: [
         {
-          name: "BearReportType", //"IncidentType"
-          label: "Bear Report"  //"Incident Type"
+          name: "Species", 
+          label: "Species"  
         },
         {
-          name: "Date", //name: "Severity", might need to change this Andy change it to the fields that you want the user to edit
-          label: "Date"//label: "Severity" might need to change this Andy
+          name: "Date_Time",
+          label: "Date"
         },
         {
-          name: "Time",
-          label: "Time"
+          name: "Location_Desc",
+          label: "Location"
         },
-        {
-          name: "Kind",
-          label: "Kind"
-        }],
+        { 
+          name: "UserName",
+          label: "User"
+         }]},
       enabled: true, // default is true, set to false to disable editing functionality
       addEnabled: true, // default is true, set to false to disable the ability to add a new feature
       updateEnabled: true, // default is true, set to false to disable the ability to edit an existing feature
-      deleteEnabled: true // default is true, set to false to disable the ability to delete features
+      deleteEnabled: true, // default is true, set to false to disable the ability to delete features
+      attributeUpdatesEnabled: true, // Default is true, set to false to disable the ability to edit attributes in the update workflow.
+      geometryUpdatesEnabled: true, // Default is true, set to false to disable the ability to edit feature geometries in the update workflow.
+      attachmentsOnCreateEnabled: true, //Default is true, set to false to disable the ability to work with attachments while creating features.
+      attachmentsOnUpdateEnabled: true //Default is true, set to false to disable the ability to work with attachments while updating/deleting features.
     },
+    
     {
       view: view,
-      layer: TrailHeadsLayer,
+      layer: trailHeadsLayer,
       enabled: false, // default is true, set to false to disable editing functionality
       addEnabled: false, // default is true, set to false to disable the ability to add a new feature
       updateEnabled: false, // default is true, set to false to disable the ability to edit an existing feature
@@ -790,7 +626,7 @@ var bearreportRenderer = {
     },           
      {
       view: view,
-      layer: GNPboundaryLayer,
+      layer: GNPboundaryLayer,//GNPboundaryLayer
       enabled: false, // default is true, set to false to disable editing functionality
       addEnabled: false, // default is true, set to false to disable the ability to add a new feature
       updateEnabled: false, // default is true, set to false to disable the ability to edit an existing feature
@@ -807,52 +643,66 @@ var bearreportRenderer = {
    ]
   });
 
-  //Editor Widget Functionality that allows for user submitted data - EDIT THIS ANDY FOR BEAR REPORTS
+  //Editor Widget Functionality that allows for user submitted data
   editor.viewModel.watch('state', function(state){
     if(state === 'ready'){
       setTimeout(function(){
-        document.getElementsByClassName('esri-editor__title esri-heading')[0].innerHTML = 'Bear Reports';//'Leaf Collection Incident'
+        document.getElementsByClassName('esri-editor__title esri-heading')[0].innerHTML = 'Animal Sightings'; // 'Bear Reports'
         var actions = document.getElementsByClassName("esri-editor__feature-list-name");
         Array.from(actions).forEach(function(ele){
           if(ele.innerHTML==='Add feature'){
-            ele.innerHTML = 'Report New Bear Report'; //Report New Incident
+            ele.innerHTML = 'Create New Animal Sighting'; //'Create New Bear Report'
           }
       	  if(ele.innerHTML==='Edit feature'){
-            ele.innerHTML = 'Modify or Delete Existing Bear Report'; //modify or delete existing incident
-          
+            ele.innerHTML = 'Modify or Delete Existing Animal Sightings'; //'Modify or Delete Existing Bear Reports'
           }
         });
-      }, 50);
+      }, 50); 
     }
   });
 
-  //create node for content panel(remove not needed, could add the reservation.gov or the nps site here Andy)
-  // var node = domConstruct.create("div", {
-  //   className: "myPanel",
-  //   innerHTML: "<b>Resident Portal Information Guide</b><br>" +
-  //   '<a class="none" href="https://www.naperville.il.us/" target="_blank"><img class="NPD" src="img/logo.png" alt="NPD" style="width:111px;height:42px;"></a>' +
-  //   "<p>Thank you for utilizing the Naperville Leaf Collection Resident Portal! The portal offers residents the ability to locate and flag leaf collection incidents in an interactive map, allowing Leaf Crews to respond to concerns in a timely manner.</p></b>" +
+  // build in more links for animal information------------------------------------- Add one widget that creates a drop down for multiple sites if possible.
+//   create node for content panel( could add the reservation.gov or the nps site here, change the "Every year..." for animal sightings  Andy)
+  var node = domConstruct. create("div", {
+    className: "myPanel",
+    innerHTML: "<b>Animal Sightings at Glacier National Park</b><br>" + //"<b>Resident Portal Information Guide</b><br>" +
+    '<a class="none" href="https://www.nps.gov/glac/learn/nature/mammals.htm" target="_blank"></a>' + //<img class="NPS" src="img/nps_logo.edit_2.jpg" alt="NPS" style="width:111px;height:42px;">
+    "<p>Welcome to the Glacier National Park Animal Sightings Portal! The portal offers visitors and staff the ability to locate animal sightings in an interactive map, allowing park staff to respond to concerns about visitor and animal interactions in Glacier National Park.</p></b>" +
   //   '<a class="none" href="https://www.naperville.il.us/services/brush-leaf-and-yard-waste-collection/bulk-curbside-leaf-collection/" target="_blank"><img class="NPD" src="img/leaf4.jpg" alt="Prairie Crayfish" style="width:100px;height:60px;"></a></b>' +
   //   '<a class="none" href="https://app.powerbigov.us/view?r=eyJrIjoiNzlhMDgyOWQtYTBjMi00MzgwLWFiM2QtYjg3YTBhZjVlYjU5IiwidCI6ImI5YTBmOTlmLTRiZGUtNGI4MS04YjIxLWZjZWRkNDU4ZmVjNSJ9" target="_blank"><img class="NPD" src="img/icons8-graph-report-64.png" alt="NPD" style="width:64px;height:64px;"></a>' +
-  //   "<p>In years past, the 3rd leaf collection cycle was neccessary in order to account for late leaf-fall or missed-service. However, this delayed the fleet's Winter conversion to salt trucks in December. <br> With your continued map contributions, we can make this an effective program that responds to your needs in real-time! </p></b>"
-  // });
+    "<p>Glacier National Park hosts 3 million visitors every year. This application was created to assist park staff with monitoring human and animal interactions within the park with the aim to encourage safe teachable interactions. <br> With your continued map contributions, we can make this an effective program that increases your safety and the safety of other visitors. </p></b>"
+    });
 
-  // const purpose = new Expand({
-  //  expandIconClass: "esri-icon-description",
-  //  view: view,
-  //  expanded: false,
-  //  expandTooltip: "Application Purpose",
-  //  content: node
-  // });
+    const purpose = new Expand({
+     expandIconClass: "esri-icon-description",
+     view: view,
+     expanded: false,
+     expandTooltip: "Application Purpose",
+     content: node
+    });
 
-//don't know whether I should keep this or not --------
-  // watchUtils.whenTrueOnce(purpose, 'expanded', function(){
-  //  on(dom.byId("btnSubmit"), 'click', function(){
-  //    console.log("submit clicked");
-  //  });
-  // });
-
- //creating basemap widget and setting its container to a div
+ // keep
+    watchUtils.whenTrueOnce(purpose, 'expanded', function(){
+     on(dom.byId("btnSubmit"), 'click', function(){
+       console.log("submit clicked");
+     });
+    });
+    
+    function openLink() {
+      const dropdown = document.getElementById("linkDropdown");
+      const selectedValue = dropdown.value;
+      
+      if (selectedValue) {
+        window.open(selectedValue, "_blank"); // Open the link in a new tab
+        dropdown.selectedIndex = 0; // Reset dropdown to the default option
+      }
+    }
+    
+    document.addEventListener("DOMContentLoaded", function() {
+      document.getElementById("linkDropdown").addEventListener("change", openLink);
+    });
+    
+  //creating basemap widget and setting its container to a div
   var basemapGallery = new BasemapGallery({
    view: view,
    container: document.createElement("div")
@@ -878,18 +728,15 @@ var bearreportRenderer = {
   // Add the expand instance to the ui
   view.ui.add(bgExpand, "top-left");
 
-  //create layer lists widget to make layers visiblie or invisible
+  //create layer lists widget to make layers visible or invisible
   var layerList = new LayerList({
    view: view,
    // executes for each ListItem in the LayerList
    listItemCreatedFunction: function (event) {
-
-     // The event object contains properties of the - EDIT THIS WITH YOUR NEW LAYERS ANDY
-     // layer in the LayerList widget.
-
+  
      var item = event.item;
 
-     if (item.title === "trailheadsLayer") { //"GEOG777PROJ2 Layers - Address Points"
+     if (item.title === "trailheadsLayer") { 
        // open the list item in the LayerList
        item.open = true;
        // change the title to something more descriptive
@@ -900,40 +747,42 @@ var bearreportRenderer = {
          open: true
        };
      }
-     if (item.title === "RestRoomsLayers") { //GEOG777PROJ Layers - TreeInventory"
+     if (item.title === "RestRoomsLayers") { 
        // open the list item in the LayerList
        item.open = true;
        // change the title to something more descriptive
-       item.title = "RestRooms"; //Trees
+       item.title = "RestRooms"; 
        //add legend
        item.panel = {
          content: "legend",
          open: true
        };
      }
-     if (item.title === "ViewPointsLayer") { //"GEOG777PROJ2 Layers - Storm Structures"
+     if (item.title === "ViewPointsLayer") { 
        // open the list item in the LayerList
        item.open = true;
        // change the title to something more descriptive
-       item.title = "View Points"; //"Storm Drains"
+       item.title = "View Points"; 
        //add legend
        item.panel = {
          content: "legend",
          open: true
        };
      }
-     if (item.title === "bearReportsLayer") { //GEOG777PROJ2 Layers - IncidentReport
-       // open the list item in the LayerList
-       item.open = true;
-       // change the title to something more descriptive
-       item.title = "Bear Reports"; //Leaf Collection Incidents
-       //add legend
-       item.panel = {
-         content: "legend",
-         open: true
-       };
-     }
-     if (item.title === "RangerStationLayer") { //GEOG777PROJ2 Layers - Subdivisions
+    
+     if (item.title === "animalSightingLayer") { //changes for animal sightings
+      // open the list item in the LayerList
+      item.open = true;
+      // change the title to something more descriptive
+      item.title = "Animal Sighting"; 
+      //add legend
+      item.panel = {
+        content: "legend",
+        open: true
+      };
+    }
+     
+     if (item.title === "RangerStationLayer") { 
        // open the list item in the LayerList
        item.open = true;
        // change the title to something more descriptive
@@ -944,7 +793,7 @@ var bearreportRenderer = {
          open: true
        };
      }
-   if (item.title === "PicnicAreasLayer") { //GEOG777PROJ2 Layers - Subdivisions
+   if (item.title === "PicnicAreasLayer") { 
        // open the list item in the LayerList
        item.open = true;
        // change the title to something more descriptive
@@ -955,7 +804,7 @@ var bearreportRenderer = {
          open: true
        };
      }
-   if (item.title === "ParkingLayer") { //GEOG777PROJ2 Layers - Subdivisions
+   if (item.title === "ParkingLayer") { 
        // open the list item in the LayerList
        item.open = true;
        // change the title to something more descriptive
@@ -966,7 +815,7 @@ var bearreportRenderer = {
          open: true
        };
      }
-   if (item.title === "CampgroundsLayer") { //GEOG777PROJ2 Layers - Subdivisions
+   if (item.title === "CampgroundsLayer") { 
        // open the list item in the LayerList
        item.open = true;
        // change the title to something more descriptive
@@ -977,7 +826,7 @@ var bearreportRenderer = {
          open: true
        };
      }
-     if (item.title === "TrailsLayer") { //GEOG777PROJ2 Layers - Subdivisions
+     if (item.title === "TrailsLayer") {
        // open the list item in the LayerList
        item.open = true;
        // change the title to something more descriptive
@@ -988,7 +837,7 @@ var bearreportRenderer = {
          open: true
        };
      }  
-     if (item.title === "GNPboundaryLayer") { //GEOG777PROJ2 Layers - Subdivisions
+     if (item.title === "GNPboundaryLayer") { //GNPboundaryLayer
        // open the list item in the LayerList
        item.open = true;
        // change the title to something more descriptive
@@ -999,7 +848,7 @@ var bearreportRenderer = {
          open: true
        };
      }
-     if (item.title === "RoadsLayer") { //GEOG777PROJ2 Layers - Subdivisions
+     if (item.title === "RoadsLayer") { 
        // open the list item in the LayerList
        item.open = true;
        // change the title to something more descriptive
@@ -1027,10 +876,10 @@ var bearreportRenderer = {
   //adds expand button to map TRY TO CHANGE ICON AND WORDS OF EXPAND BOX
   editorExpand = new Expand({
    expandIconClass: "esri-icon-visible",  // see https://developers.arcgis.com/javascript/latest/guide/esri-icon-font/
-   // expandTooltip: "Expand LayerList", // optional, defaults to "Expand" for English locale
+ expandTooltip: "Expand LayerList", // optional, defaults to "Expand" for English locale
    view: view,
    content: editor,
-   expandTooltip: "Bear Reports" //"Report Leaf Collection Incident" 
+   expandTooltip: "Animal Sighting"  
   });
 
   view.ui.add(editorExpand, "top-left");
@@ -1041,46 +890,288 @@ var bearreportRenderer = {
   // Add the home button to the top left corner of the view
   view.ui.add(homeBtn, "top-left");
 
-  //pop up for subdivision being searched - edit for Bear Reports ANDY
-  var bearReportsSearch = new FeatureLayer({ //subdivisionSearch
-   url:
-     "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/Bear_Encounters/FeatureServer",//"https://services.arcgis.com/HRPe58bUyBqyyiCt/ArcGIS/rest/services/GEOG777PROJ2_Layers/FeatureServer/5",
-   popupTemplate: {
-     // autocasts as new PopupTemplate()
-     title: "Bear Reports: {ReportType} ", //"Bear Reports: {SUB_NAME} </br>Trees: {TREE_TOTAL} </br>Total Storm Drains: {STORM_TOTAL}",
-     overwriteActions: true
-   }
-  });
+//pop up for Animal Sightings being searched (test 1 11/29/2024)
+// var animalSightingSearch = new FeatureLayer({ 
+//   url:
+//     "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/Animal_Sightings2/FeatureServer",//https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/Animal_Sightings_1/FeatureServer",
+//   popupTemplate: {
+//     // autocasts as new PopupTemplate()
+//     title: "Animal Sighting: {Species}", //"Bear Reports: {SUB_NAME} </br>Trees: {TREE_TOTAL} </br>Total Storm Drains: {STORM_TOTAL}",
+//     overwriteActions: true
+//   }
+//  });
 
+ 
+ // Disable the default popupTemplate behavior
+//animalSightingLayer.popupTemplate = null;
 
-  //Search Widget Functionality Enabling Leaf Crews to Query Neighborhoods (keep search widget to allow the user to search bear reports.ANDY)
+ // Enable and configure popup docking
+view.popup.dockEnabled = true;
+view.popup.collapseEnabled = false;
+view.popup.dockOptions = {
+  breakpoint: false,
+  buttonEnabled: true,
+  position: "bottom-right" // Popup docked in the bottom-right corner
+};
+ 
+ 
+ //add search widget
   var searchWidget = new Search({
     view: view,
-    allPlaceholder: "Enter Bear Report Type", // Enter Subdivison Name
+    allPlaceholder: "Enter Species or Username", 
     sources: [
       {
-        layer: bearReportSearch, //subdivisionSearch
-        searchFields: ["ReportType"], //"SUB_NAME"
-        displayField: "ReportType", //"SUB_NAME"
-        exactMatch: false,
-        outFields: ["ReportType", "Date", "Time", "Kind"], //"SUB_NAME","TREE_TOTAL","STORM_TOTAL"
-        name: "Bear Reports",//"Naperville Subdivisions"
-        placeholder: "Bear Report Search" //"Subdivision Search (e.g. 'Maple..)"
+        layer: animalSightingLayer, //animalSightingSearch, 
+        searchFields: ["Species"], 
+        displayField: "Species", 
+        exactMatch: false, //Allow partial matches
+        outFields: ["*"], //["Species", "Date_Time", "Location_Desc", "UserName"], //Photos and files, see if you can search by username too. 
+        name: "Search by Species",
+        placeholder: "Enter Animal Species"
+      },
+      {
+        layer: animalSightingLayer, //animalSightingSearch, 
+        searchFields: ["UserName"], 
+        displayField: "UserName", 
+        exactMatch: false, //Allow partial matches
+        outFields: ["*"],//["Species", "Date_Time", "Location_Desc", "UserName"], // Include fields you want to display
+        name: "Search by Username",
+        placeholder: "Enter Username"
       }
     ],
-    includeDefaultSources: false
-
+    includeDefaultSources: false//, //Exclude default ArcGIS World Geocoder
+    
   });
 
+  
   // Add the search widget to the top right corner of the view
   view.ui.add(searchWidget, {
     position: "top-right",
     width: "50%"
   });
 
-  view.ui.add(purpose, "top-right");
+  let highlightHandle; // Store the highlight handle for clearing later
+  let isSearchPopup = false; // Flag to indicate whether the popup is showing search results 
 
+// Handle search results
+searchWidget.on("search-complete", function (event) {
+  // Clear existing features in the popup
+  //view.popup.close();
+
+  // Clear any existing highlights
+  if (highlightHandle) {
+     highlightHandle.remove();
+   }
+   // Flatten search results across sources
+   const results = event.results.flatMap((r) => r.results); // Flatten results from all sources
   
+   // Check if any results were returned
+  if (results.length > 0) {
+    //const allFeatures = [];
+    const features = results.map((result) => result.feature);
 
+  // Highlight all results
+    view.whenLayerView(animalSightingLayer).then((layerView)=> {
+      highlightHandle = layerView.highlight(features);
+    });
+
+    // Zoom to extent of all results
+    const geometries = features.map((feature) => feature.geometry);
+    const extent = geometries.reduce((acc, geometry) => {
+      return acc ? acc.union(geometry.extent) : geometry.extent;
+    }, null);
+
+    if (extent) {
+      view.goTo(extent.expand(1.5)).catch((error) => {
+        console.error("Error zooming to extent of results:", error);
+      });
+    }
+    
+    // Set the popup to display all results
+    isSearchPopup = true; // Set the flag
+    view.popup.open({
+      features: features, // Add all features to the popup
+      featureNavigationEnabled: true, // Allow navigation through results
+      title: `Search Results (${features.length})`
+    });
+
+// Prevent the default popup from overriding the search results
+view.popup.watch("visible", function (visible) {
+  if (!visible) {
+    isSearchPopup = false; // Exit search mode when the popup is closed
+  }
 });
 
+// Stop automatic layer interactions from triggering new popups
+view.on("click", (event) => {
+  if (isSearchPopup) {
+    event.stopPropagation();
+  }
+});
+} else {
+console.warn("No results found for the search query.");
+view.popup.close(); // Ensure popup is closed when no results are found
+}
+});
+
+// Reset the click handler after exiting search mode
+view.popup.watch("visible", function (visible) {
+if (!visible) {
+isSearchPopup = false;
+}
+});
+
+
+     // Set the popup to display all results
+    //  isSearchPopup = true; // Set the flag
+    //  view.popup.open({
+    //    features: features, // Add all features to the popup
+    //    featureNavigationEnabled: true, // Allow navigation through results
+    //    title: `Search Results (${features.length})`
+    //  });
+ 
+//      // Prevent automatic selection changes in the popup
+//      view.popup.watch("selectedFeatureIndex", function (index) {
+//        if (isSearchPopup && index !== -1) {
+//          // Force the popup to stop changing automatically
+//          view.popup.selectedFeatureIndex = -1;
+//        }
+//      });
+//     // Prevent automatic selection changes in the popup
+//     // view.popup.watch("selectedFeature", function (selectedFeature) {
+//     //   if (isSearchPopup) {
+//     //     // Stop selection changes caused by the default behavior
+//     //     view.popup.selectedFeatureIndex = -1;
+//     //   }
+//     // });
+
+//     // Reset the flag after the popup is manually closed
+//     view.popup.watch("visible", function (visible) {
+//       if (!visible) {
+//         isSearchPopup = false; // Reset the flag when popup is closed
+//       }
+//     });
+//   } else {
+//     console.warn("No results found for the search query.");
+//     view.popup.close(); // Ensure popup is closed when no results are found
+//   }
+// });
+//     // Display all search results as individual popup items
+//     view.popup.open({
+//       features: features, // All features added as popup items
+//       featureNavigationEnabled: true, // Enable navigation between features
+//       title: `Search Results (${features.length})`
+//     });
+//   } else {
+//     console.warn("No results found for the search query.");
+//     view.popup.close(); // Ensure popup is closed when no results are found
+//   }
+// });
+//      // Open popup with multiple results
+//      view.popup.open({
+//       location: features[0].geometry, // Focus on the first result's location
+//       title: `Search Results (${features.length})`,
+//       content: features
+//         .map(
+//           (feature, index) =>
+//             `<b>Result ${index + 1}:</b><br>` +
+//             `<b>Species:</b> ${feature.attributes.Species || "N/A"}<br>` +
+//             `<b>Date/Time:</b> ${feature.attributes.Date_Time || "N/A"}<br>` +
+//             `<b>Location:</b> ${feature.attributes.Location_Desc || "N/A"}<br>` +
+//             `<b>Username:</b> ${feature.attributes.UserName || "N/A"}<br><hr>`
+//         )
+//         .join("") // Combine all results in one popup
+//     });
+//   } else {
+//     console.warn("No results found for the search query.");
+//     view.popup.close(); // Ensure popup is closed when no results are found
+//   }
+// });
+// Add a click event listener to handle feature popups outside search
+view.on("click", (event) => {
+  view.hitTest(event).then((response) => {
+    const results = response.results.filter((result) => {
+      return result.graphic && result.graphic.layer === animalSightingLayer;
+    });
+
+    if (results.length > 0) {
+      const selectedFeature = results[0].graphic;
+
+      // Open the popup for the clicked feature
+      view.popup.open({
+        location: event.mapPoint,
+        features: [selectedFeature] // Open the popup for the selected feature
+      });
+    } else {
+      view.popup.close(); // Close popup if no feature is found
+    }
+  });
+});    
+
+//Create a content string to display all attributes
+    // const content = features
+    //   .map(
+    //     (feature, index) =>
+    //       `<b>Result ${index + 1}:</b><br>` +
+    //       `<b>Species:</b> ${feature.attributes.Species || "N/A"}<br>` +
+    //       `<b>Date/Time:</b> ${feature.attributes.Date_Time || "N/A"}<br>` +
+    //       `<b>Location:</b> ${feature.attributes.Location_Desc || "N/A"}<br>` +
+    //       `<b>Username:</b> ${feature.attributes.UserName || "N/A"}<br><hr>`
+    //   )
+    //   .join("");
+        
+    // //if (allFeatures.length > 0) {
+    //   // Display multiple features in the popup
+    //     // Set the popup's location and content based on the result
+    //     view.popup.open({
+    //       //features: features, // Set all results as popup features
+    //       //featureNavigationEnabled: true, // Enable navigation between features
+    //       location: features[0].geometry, // Focus on the first result's location
+    //       //location: result.feature.geometry, // Use the result's geometry
+    //       title: `Search Results (${features.length})`,//"Search Results",
+    //       content: content //"Navigate through the results to zoom and view details."//function () {
+    //       });        
+ 
+//  // Highlight all results
+//  view.whenLayerView(animalSightingLayer).then(function (layerView) {
+//   highlightHandle = layerView.highlight(features);
+// });
+
+// // Zoom to extent of all results
+// const geometries = features.map((feature) => feature.geometry);
+// const extent = geometries.reduce((acc, geometry) => {
+//   return acc ? acc.union(geometry.extent) : geometry.extent;
+// }, null);
+
+// if (extent) {
+//   view.goTo(extent.expand(12)).catch((error) => {
+//     console.error("Error zooming to extent of results:", error);
+//   });
+// }
+
+// // Add event listener for popup navigation
+// view.popup.watch("selectedFeature", function (selectedFeature) {
+//   if (selectedFeature) {
+//     view.goTo({
+//       target: selectedFeature.geometry,
+//       zoom: 15 // Adjust zoom level for individual feature
+//     }).catch((error) => {
+//       console.error("Error zooming to selected feature:", error);
+//     });
+//   }
+// });
+// } else {
+// console.warn("No results found for the search query.");
+// }
+// });
+ 
+   view.ui.add(purpose, "top-right");
+
+   // Add the animal information button to the map (try for the left corner of the view) 
+  // view.ui.add(information, "top-left");
+  view.ui.add("linkDropdownContainer", {
+    position: "top-right",
+    index: 8 // Higher index pushes it further down
+  });
+   
+});
