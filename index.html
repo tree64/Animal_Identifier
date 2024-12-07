@@ -4,7 +4,7 @@
       <meta charset="utf-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
 
-      <title>Glacier National Park Bear Encounters</title>
+      <title>Glacier National Animal Sightings</title>
 
       <link rel="stylesheet" href="css/style.css">
       <link href="css/bootstrap.min.css" rel="stylesheet">
@@ -21,17 +21,35 @@
       <div class="container-fluid">
         <div class="row" id=header>
           <div class="col-sm">
-            <h1>//look into whether I can remove the section a
-              <a class="none" href="https://www.napervilleparks.org/parkslist" target="_blank">
-               <img class='NPD' src="img/NPD-Logo-Vertical-Color.png" alt="NPD Logo" style="width:30px;height:30px;">
+            <h1>
+              <a class="none" href="https://www.nps.gov/glac/index.htm" target="_blank">
+               <img class='NPS' src="img/nps_logo_edit_2.jpg" alt="NPS Logo" style="width:30px;height:30px;">
               </a>
-              <b>Glacier National Park</b>
+              <b>Animal Sightings at Glacier National Park</b>
             </h1>
           </div>
           <div class="mapSection" id="mapBox">
             <div id="viewDiv"></div>
           </div>
-        </div>
+          <!-- this contains the drop down for the links in the link widget-->
+          <div id="linkDropdownContainer">
+            <select id="linkDropdown" onchange="openLink()">
+              <option value="" disabled selected>Animal Information</option>
+              <option value="https://www.nps.gov/glac/learn/nature/mammals.htm">Mammals at Glacier National Park</option>
+              <option value="https://www.nps.gov/glac/learn/nature/birds.htm">Birds at Glacier National Park</option>
+              <option value="https://www.nps.gov/glac/learn/nature/amphibians.htm">Amphibians at Glacier National Park</option>
+              <option value="https://www.nps.gov/glac/learn/nature/reptiles.htm">Reptiles at Glacier National Park</option>
+              <option value="https://www.nps.gov/glac/learn/nature/insects.htm">Insects at Glacier National Park</option>
+              <option value="https://www.nps.gov/glac/learn/nature/fish.htm">Fish at Glacier National Park</option>
+              <!-- Add more options as needed -->
+            </select>
+          
+          </div>
+      
+              </div>
+            </div>
+          </div>
+        
       </div>
 
       <!-- scripts -->
@@ -40,9 +58,22 @@
       <script src="lib/bootstrap.bundle.min.js"></script>
       <script src="https://js.arcgis.com/4.18/"></script>
       <script src="js/loadMap.js"></script>
+     
+      <!-- JavaScript at the end of the body -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const dropdown = document.getElementById("linkDropdown");
 
-      
-
-      
+      // Add an event listener to the dropdown
+      dropdown.addEventListener("change", function() {
+        const selectedValue = dropdown.value;
+        
+        if (selectedValue) {
+          window.open(selectedValue, "_blank"); // Open link in a new tab
+          dropdown.selectedIndex = 0; // Reset dropdown to the default option
+        }
+      });
+    });
+  </script>
     </body>
 </html>
